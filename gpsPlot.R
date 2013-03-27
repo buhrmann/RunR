@@ -24,8 +24,8 @@ roundEvenDown = function(x){
 # ------------------------------------------------------------------------------
 plotSpeedElevation = function(gps, time=F, pace=F, legend=F, date=Sys.time()){
   
-  par(mfrow=c(1,1))
-  par(mar=c(5,4,4,5)+0.1)
+  par(mar=c(5,4,4,5)+0.1, font.main=1, cex.main = 1.25, cex.axis=1)
+  cexLab = 0.8
   
   x = if(time) gps$elapsedSec/3600 else gps$cumDist
   y = if(pace) gps$pace else gps$speedSmooth
@@ -35,22 +35,22 @@ plotSpeedElevation = function(gps, time=F, pace=F, legend=F, date=Sys.time()){
   
   plot(x, y, axes=F, type="l", xlab="", ylab="", lwd=2)
   axis(2)
-  mtext(ylab, side=2, line=2.5)
+  mtext(ylab, side=2, line=2.5, cex=cexLab)
   
   par(new=T)
   plot(x, gps$elevation, ylim=c(0.95*min(gps$elevation), 1.3*max(gps$elevation)), type="l", axes=F, col="red", xlab="", ylab="")
   polygon(c(x, rev(x)), c(rep(0,length(x)), rev(gps$elevation)), col=rgb(1,0,0,0.2), border=NA)
   axis(4, col="red", pretty(c(0.95*min(gps$elevation), 1.0*max(gps$elevation))))
-  mtext("Elevation [m]", side=4, line=3, adj=0)
+  mtext("Elevation [m]", side=4, line=3, adj=0, cex=cexLab)
   
   axis(1)
-  mtext(xlab, side=1, line=2)
+  mtext(xlab, side=1, line=2.5, cex=cexLab)
   
   if(legend){
     legend("topleft", col=c("black","red"), lty=1, legend=c(ylab,"elevation"))  
   }
   
-  title(paste("Run on", strftime(date)))
+  title(strftime(date, format="%A %d of %B, %Y at %H:%M"))
 }
 
 # ------------------------------------------------------------------------------
@@ -79,10 +79,10 @@ plotTrack3d = function(gps){
 # ------------------------------------------------------------------------------
 # Distance run at dates
 # ------------------------------------------------------------------------------
-plotDistanceBars = function(stats){
+plotDistanceBars = function(stats,...){
   max = roundEvenUp(max(stats$totalDistance))
   barplot(rev(stats$totalDistance), names.arg=strftime(rev(stats$startTime), format="%d-%m"), 
-          xlab="", ylab="Distance [km]", col="black", las=2, ylim=c(0, max))
+          xlab="", ylab="Distance [km]", col="black", las=2, ylim=c(0, max),...)
 }
 
 plotDistanceBarsCal = function(stats){
@@ -103,6 +103,6 @@ plotPaceDistance = function(stats){
   max = ceiling(max(stats$paceAvg))
   min = floor(min(stats$paceAvg))
   plot(stats$totalDistance, stats$paceAvg, col="black", pch=19, bty="n", 
-       xlab="Distance [km]", ylab="Average Pace [min/km]", ylim=c(max, min))
+       xlab="Distance [km]", ylab="Average Pace [min/km]", ylim=c(min, max))
   abline(lm(paceAvg ~ totalDistance, data=stats))
 }

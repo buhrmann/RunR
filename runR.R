@@ -6,12 +6,12 @@ library(ggplot2)
 # ------------------------------------------------------------------------------
 rm(list=ls(all=TRUE)) 
 
-setwd("~/Documents/Runs/RunR")
+setwd("~/Code/RunR")
 source("gpsPlot.R")
 source("gpsStats.R")
 source("nike.R")
 
-setwd("~/Documents/Runs/RunR/Data")
+setwd("~/Code/RunR/Data")
 
 # ------------------------------------------------------------------------------
 # Main
@@ -46,24 +46,19 @@ load("AllRuns.R")
 # ------------------------------------------------------------------------------
 stats
 
-farthest = which(stats$totalDistance == max(stats$totalDistance))
-farthestDate = stats[farthest,]$startTime
-farthestDist = stats[farthest,]$totalDistance
-
-longest = which(stats$durationH == max(stats$durationH))
-longestDate = stats[longest,]$startTime
-longestDuration = stats[longest,]$duration
-
-print(paste("Accumulated:", sum(stats$totalDistance), "km"))
-print(paste("Farthest run:", farthestDist, "km. On",  farthestDate))
-print(paste("Longest run:", longestDuration, ". On",  farthestDate))
+mrs = multiRunSummary(stats)
+print(mrs)
 
 # Plots: single run
 # ------------------------------------------------------------------------------
-run = 1
-gps = runsGps[[run]]
+runId = 1
+gps = runsGps[[runId]]
 
-plotSpeedElevation(gps, time=F, pace=F, legend=F, date=stats$startTime[run])
+numPlots = 3
+par(mfrow=c(numPlots, 1))
+for(i in 1:3)
+  plotSpeedElevation(runsGps[[i]], time=F, pace=F, legend=F, date=stats$startTime[i])
+par(mfrow=c(1, 1))
 
 boxplot(gps$speedSmooth)
 
@@ -73,24 +68,26 @@ plotTrack3d(gps)
 
 # Statistics
 # ------------------------------------------------------------------------------
-filterby = "30d"
+filterby = "recent"
 
 if(filterby == "month"){
   year = 2013
   month = 3
-  startDate = as.POSIXct(paste(year, "-", month, "-01", sep=""), "%Y-%m-%d")
-  endDate = startDate + 31*24*3600
-  statsFiltered = stats[stats$startTime > startDate & stats$startTime < endDate,]
-} else if (filterby == "30d"){
-  endDate = Sys.time()
-  startDate = endDate - 31*24*3600
-  statsFiltered = stats[stats$startTime > startDate & stats$startTime < endDate,]
+  statsFiltered = filterByMonth(stats, year, month)
+} else if (filterby == "recent"){
+  days = 31
+  statsFiltered = filterByRecent(stats, days)
 }
 
+multiRunSummary(statsFiltered)
+
+dev.off()
 par(mar=c(5,4,4,1)+0.1)
 plotDistanceBars(statsFiltered)
 plotDistanceBarsCal(statsFiltered)
 plotPaceDistance(statsFiltered)
+
+# Todo plot of speed across all runs
 
 # Todo boxplot of speed across all runs
 # boxplot(stats$speedAvg)

@@ -31,13 +31,52 @@ hoursToTimeString = function(hours){
 # ------------------------------------------------------------------------------
 # Print statistics
 # ------------------------------------------------------------------------------
-printRunSummary = function(gps){
+singleRunSummary = function(gps){
   stats = attr(gps, "stats")
   print(paste("Total distance:", stats[["totalDistance"]], "km"))
   print(paste("Duration: ", stats[["duration"]]))
   print(paste("Speed Max:", stats[["speedMax"]], "Avg:", stats[["speedAvg"]], "km/h"))
   print(paste("Pace Max: ", stats[["paceMax"]], "Avg:", stats[["paceAvg"]],  "min/km"))
   print(paste("Elevation covered: ", stats[["totalElevation"]], "m"))
+}
+
+# ------------------------------------------------------------------------------
+multiRunSummary = function(stats){
+  farthest = which(stats$totalDistance == max(stats$totalDistance))
+  farthestDate = stats[farthest,]$startTime
+  farthestDist = stats[farthest,]$totalDistance
+  
+  longest = which(stats$durationH == max(stats$durationH))
+  longestDate = stats[longest,]$startTime
+  longestDuration = stats[longest,]$durationH
+  
+  res = list()
+  res[["Number of runs"]] = list(Value=nrow(stats), Units="", Date="")
+  res[["Total distance"]] = list(Value=sum(stats$totalDistance), Units="km", Date="")
+  res[["Average distance"]] = list(Value=mean(stats$totalDistance), Units="km", Date="")
+  res[["Average speed"]] = list(Value=mean(stats$speedAvg), Units="km/h", Date="")
+  res[["Average pace"]] = list(Value=mean(stats$paceAvg), Units="min/km", Date="")
+  res[["Farthest distance"]] = list(Value=farthestDist, Units="km", Date=strftime(farthestDate))
+  res[["Longest run"]] = list(Value=longestDuration, Units="", Date=strftime(farthestDate))
+  return(res)
+}
+
+# ------------------------------------------------------------------------------
+# Filter summary statistics
+# ------------------------------------------------------------------------------
+filterByMonth = function(stats, year, month){
+  startDate = as.POSIXct(paste(year, "-", month, "-01", sep=""), "%Y-%m-%d")
+  endDate = startDate + 31*24*3600
+  statsFiltered = stats[stats$startTime > startDate & stats$startTime < endDate,]
+  return(statsFiltered)
+}
+
+# ------------------------------------------------------------------------------
+filterByRecent = function(stats, days){
+  endDate = Sys.time()
+  startDate = endDate - days*24*3600
+  statsFiltered = stats[stats$startTime > startDate & stats$startTime < endDate,]
+  return(statsFiltered)
 }
 
 # ------------------------------------------------------------------------------

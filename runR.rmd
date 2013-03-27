@@ -1,0 +1,69 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(xtable)
+library(plyr)
+setwd("~/Code/RunR/")
+source("gpsStats.R")
+source("gpsPlot.R")
+load("data/AllRuns.R")
+nrec = 3
+```
+
+<style type="text/css">
+body, td {
+   font-size: 14px;
+   font-family: "Garamond";
+}
+td{
+  padding-right: 10px;
+}
+</style>
+
+Analysis of Nike+ running data with RunR
+========================================================
+RunR downloads your running data using the Nike+ API, calculates some basic statistics, and visualises the result.
+
+Last `r nrec` runs
+--------------------------------------------------------
+```{r fig.width=11, fig.height=9, echo=FALSE, fig.align='center', cache=FALSE}
+numPlots = 3
+par(mfrow=c(numPlots, 1))
+for(i in 1:3)
+  plotSpeedElevation(runsGps[[i]], time=F, pace=F, legend=F, date=stats$startTime[i])
+par(mfrow=c(1, 1))
+```
+
+Graphical summary of recent runs
+--------------------------------------------------------
+```{r echo=FALSE, comment="", results='asis', fig.width=5, fig.height=4}
+filterby = "recent"
+if(filterby == "month"){
+  year = 2013
+  month = 3
+  statsFiltered = filterByMonth(stats, year, month)
+} else if (filterby == "recent"){
+  days = 31
+  statsFiltered = filterByRecent(stats, days)
+}
+plotDistanceBars(statsFiltered)
+plotDistanceBarsCal(statsFiltered)
+plotPaceDistance(statsFiltered)
+
+```
+
+Summary of all runs
+--------------------------------------------------------
+```{r echo=FALSE, comment="", results='asis'}
+mrs = multiRunSummary(stats)
+df = ldply(mrs, data.frame)
+print(xtable(df, align="ll|llr"), type="html", include.rownames=F, include.colnames=F, html.table.attributes=c(border=2))
+```
+
+Summary of last 31 days
+--------------------------------------------------------
+```{r echo=FALSE, comment="", results='asis'}
+mrs = multiRunSummary(statsFiltered)
+df = ldply(mrs, data.frame)
+print(xtable(df, align="ll|llr"), type="html", include.rownames=F, include.colnames=F, html.table.attributes=c(border=2))
+```
+    
+
