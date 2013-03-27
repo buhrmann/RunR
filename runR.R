@@ -18,7 +18,7 @@ setwd("~/Code/RunR/Data")
 # ------------------------------------------------------------------------------
 
 # Retrieve list of runs from Nike+
-maxRuns = 20
+maxRuns = 50
 runs = nikeGetRunsInfo(maxRuns)
 nruns = nrow(runs)
 
