@@ -9,22 +9,36 @@ nrec = 3
 ```
 
 <style type="text/css">
+body{
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+}
 body, td {
    font-size: 14px;
-   font-family: "Garamond";
+   font-weight: 200;
+   font-family: "Helvetica Neue", Helvetica;
 }
 td{
   padding-right: 10px;
 }
+h1, h2{
+  font-weight: lighter;
+}
 </style>
+
+<link href='http://fonts.googleapis.com/css?family=Raleway:400,200' rel='stylesheet' type='text/css'>
+
 
 Analysis of Nike+ running data with RunR
 ========================================================
+-----
 RunR downloads your running data using the Nike+ API, calculates some basic statistics, and visualises the result.
 
 Last `r nrec` runs
 --------------------------------------------------------
-```{r fig.width=11, fig.height=9, echo=FALSE, fig.align='center', cache=FALSE}
+-----
+```{r fig.width=11, fig.height=10, echo=FALSE, fig.align='center', cache=FALSE}
 numPlots = 3
 par(mfrow=c(numPlots, 1))
 for(i in 1:3)
@@ -34,12 +48,14 @@ par(mfrow=c(1, 1))
 
 Map of last run
 --------------------------------------------------------
+-----
 ```{r echo=FALSE, comment="", results='asis', fig.width=5, fig.height=5, warning=FALSE}
 plotMap(runsGps[[2]], zoomFac=14, src="stamen", type="toner", col="red")
 ```
 
 Graphical summary of last 31 days
 --------------------------------------------------------
+-----
 ```{r echo=FALSE, comment="", results='asis', fig.width=15, fig.height=4}
 filterby = "recent"
 if(filterby == "month"){
@@ -67,6 +83,7 @@ plotPaceDistance(stats)
 
 Summary of all runs
 --------------------------------------------------------
+-----
 ```{r echo=FALSE, comment="", results='asis'}
 mrs = multiRunSummary(stats)
 df = ldply(mrs, data.frame)
