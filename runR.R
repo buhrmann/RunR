@@ -1,95 +1,52 @@
-library(ggplot2)
 # ------------------------------------------------------------------------------
-# gpx statistics
-# http://cnr.lwlss.net/GarminR/
-# http://lwlss.net/GarminReports/GPXFunctions.R
+# GPS statistics
+# Inspired by http://cnr.lwlss.net/GarminR/
 # ------------------------------------------------------------------------------
-rm(list=ls(all=TRUE)) 
-
-setwd("~/Code/RunR")
-source("gpsPlot.R")
 source("gpsStats.R")
 source("nike.R")
 
-setwd("~/Code/RunR/Data")
+defaultLocalFnm = "Runs.rdat"
 
 # ------------------------------------------------------------------------------
-# Main
+# Loads data from disk if available or from Nike otherwise. Returns df of gps
+# data from multiple runs.
 # ------------------------------------------------------------------------------
-
-# Retrieve list of runs from Nike+
-maxRuns = 50
-runs = nikeGetRunsInfo(maxRuns)
-nruns = nrow(runs)
-
-# Retrieve gps data for each run listed
-localCsvFiles = list.files(pattern = "\\.csv")
-runsGps = list()
-for(i in seq(nruns)){
-  print(paste("Processing run ", i, " of ", nruns, "...", sep=""))
-  # Get basic gps data (long, lat, elev)
-  runsGps[[i]] = getRunGps(runs$startTime[i])
-  # Process gps to add further columns (speed etc) and calculate statistics
-  runsGps[[i]] = gpsStats(runsGps[[i]])
+loadGps = function(fnm, maxRuns=10)
+{
+  accessToken = getNikeAccessToken()
+  
+  # Retrieve list of run metadata from Nike+
+  runs = listNikeRuns(maxRuns, accessToken)
+  
+  # See whether we have previously cached runs. File stores gps data in variable "gps"
+  if(file.exists(fnm)){
+    # Only dowload non-cached runs
+    load(fnm)
+    cachedRuns = unique(gps$activityId)
+    downloadIds = setdiff(runs$activityId, cachedRuns)
+    message(paste("Need to download", length(downloadIds), "runs."))
+  } else{
+    # Dowload all runs
+    message(paste("Need to download", nrow(runs), "runs:"))
+    gps = processGps(getNikeSingleRun(runs$activityId[[1]], accessToken))
+    gps$startTime = runs$startTime[1]
+    downloadIds = runs$activityId[2:nrow(runs)]
+  }
+  
+  # Download and process all necessary runs
+  for(id in downloadIds){
+    run = processGps(getNikeSingleRun(id, accessToken))
+    run$startTime = runs[runs$activityId==id, "startTime"]
+    gps = rbind(gps, run)
+  }
+  
+  return(gps)
 }
 
-# Put overall statistics into df
-stats = attr(runsGps[[1]], "stats")
-for(i in 2:nruns) stats = rbind(stats, attr(runsGps[[i]], "stats"))
-stats$startTime = runs$startTime
-
-save(runsGps, stats, file="AllRuns.R")
-
-load("AllRuns.R")
-
-# Summary
+# Load data (from Nike+ if necessary) and store locally
 # ------------------------------------------------------------------------------
-stats
-
-mrs = multiRunSummary(stats)
-print(mrs)
-
-# Plots: single run
-# ------------------------------------------------------------------------------
-runId = 1
-gps = runsGps[[runId]]
-
-numPlots = 3
-par(mfrow=c(numPlots, 1))
-for(i in 1:3)
-  plotSpeedElevation(runsGps[[i]], time=F, pace=F, legend=F, date=stats$startTime[i])
-par(mfrow=c(1, 1))
-
-boxplot(gps$speedSmooth)
-
-plotMap(gps, zoomFac=14, src="stamen", type="toner", col="red")
-
-plotTrack3d(gps)
-
-# Statistics
-# ------------------------------------------------------------------------------
-filterby = "recent"
-
-if(filterby == "month"){
-  year = 2013
-  month = 3
-  statsFiltered = filterByMonth(stats, year, month)
-} else if (filterby == "recent"){
-  days = 31
-  statsFiltered = filterByRecent(stats, days)
+updateLocalStore = function(fnm=defaultLocalFnm, maxDownloads=2){
+  gps <<- loadGps(fnm, maxDownloads)
+  stats <<- allStats(gps)
+  save(gps, stats, file=fnm)
 }
-
-multiRunSummary(statsFiltered)
-
-dev.off()
-par(mar=c(5,4,4,1)+0.1)
-plotDistanceBars(statsFiltered)
-plotDistanceBarsCal(statsFiltered)
-plotPaceDistance(statsFiltered)
-
-# Todo plot of speed across all runs
-
-# Todo boxplot of speed across all runs
-# boxplot(stats$speedAvg)
-
-#barplot(statsDf$duration, names.arg=statsDf$dateTime, las=1, xlab="Run", ylab="Duration [h]")

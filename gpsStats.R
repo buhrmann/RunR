@@ -29,17 +29,23 @@ hoursToTimeString = function(hours){
 }
 
 # ------------------------------------------------------------------------------
-# Print statistics
+# For printing statistics of a single run
 # ------------------------------------------------------------------------------
-singleRunSummary = function(gps){
-  stats = attr(gps, "stats")
-  print(paste("Total distance:", stats[["totalDistance"]], "km"))
-  print(paste("Duration: ", stats[["duration"]]))
-  print(paste("Speed Max:", stats[["speedMax"]], "Avg:", stats[["speedAvg"]], "km/h"))
-  print(paste("Pace Max: ", stats[["paceMax"]], "Avg:", stats[["paceAvg"]],  "min/km"))
-  print(paste("Elevation covered: ", stats[["totalElevation"]], "m"))
+singleRunSummary = function(statsDf, id, print=F){
+  stats = statsDf[statsDf$activityId==id,]
+  res = list()
+  res[1] = paste(stats$totalDistance, "km", "in", stats$duration)
+  res[2] = paste("Speed: max = ", stats$speedMax, " km/h, ", " avg = ", stats$speedAvg, " km/h", sep="")
+  res[3] = paste("Pace: max = ", stats$paceMax, " min/km, ", " avg = ", stats$paceAvg, " min/km", sep="")
+  res[4] = paste("Elevation range:", stats$totalElevation, "m")
+  
+  if(print) cat(sapply(res, function(x) x), sep="\n")
+  return(res)
 }
 
+# ------------------------------------------------------------------------------
+# Collates statistics across multiple runs into data frame for easy conversion
+# to markdown table
 # ------------------------------------------------------------------------------
 multiRunSummary = function(stats){
   farthest = which(stats$totalDistance == max(stats$totalDistance))
@@ -80,9 +86,11 @@ filterByRecent = function(stats, days){
 }
 
 # ------------------------------------------------------------------------------
-# Calculate statistics on gps data (from long, lat, elev)
+# Add distance and speed etc..  (from long, lat, elev)
 # ------------------------------------------------------------------------------
-gpsStats = function(gps){
+processGps = function(gps){
+  
+  message("Processing...")
   
   # Remove missing data
   missing = gps==""
@@ -127,6 +135,14 @@ gpsStats = function(gps){
   gps$speedSmooth = los$fitted
   gps$pace = 1 / (gps$speedSmooth / 60) # min/km
   
+  return(gps)
+}
+
+# ------------------------------------------------------------------------------
+# Calculate basic statistics. Assumes gps is a df for only a single run
+# ------------------------------------------------------------------------------
+gpsStats = function(gps){
+  n = nrow(gps)
   totalDistance = round(max(gps$cumDist),1) # km
   duration = hoursToTimeString(gps$elapsedSec[n]/3600) #H:M:S
   durationH = gps$elapsedSec[n]/3600
@@ -136,9 +152,20 @@ gpsStats = function(gps){
   paceAvg = round(mean(gps$pace),1) # min/km
   totalElevation = round(max(gps$elevation) - min(gps$elevation),1) # m
   
-  stats = list(totalDistance=totalDistance, duration=duration, durationH=durationH, speedMax=speedMax, 
+  stats = data.frame(startTime=gps$startTime[1], activityId=gps$activityId[[1]], totalDistance=totalDistance, duration=duration, durationH=durationH, speedMax=speedMax, 
                speedAvg=speedAvg, paceMax=paceMax, paceAvg=paceAvg, totalElevation=totalElevation)
   
-  attr(gps, "stats") = as.data.frame(stats)
-  return(gps)
+  return(stats)
+}
+
+# ------------------------------------------------------------------------------
+# Takes a df of gps data and returns a new df of basic per-run statistics
+# ------------------------------------------------------------------------------
+allStats = function(gps) {
+  ids = unique(gps$activityId)
+  stats = gpsStats(gps[gps$activityId == ids[[1]], ])
+  for (id in ids[2:length(ids)]){
+    stats = rbind(stats, gpsStats(gps[gps$activityId == id, ]))
+  }
+  return(stats)
 }
