@@ -35,7 +35,7 @@ h1, h2{
 Analysis of Nike+ running data with RunR
 ========================================================
 -----
-RunR downloads your running data using the Nike+ API, calculates some basic statistics, and visualises the result.
+RunR downloads your running data using the Nike+ API, calculates some basic statistics, and visualises the result. Source code available on [Github](https://github.com/synergenz/RunR).
 
 Last `r nrec` runs
 --------------------------------------------------------
