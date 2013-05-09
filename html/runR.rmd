@@ -1,6 +1,7 @@
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(xtable)
 library(plyr)
+library(gridExtra)
 setwd("~/Code/RunR/")
 source("gpsStats.R")
 source("gpsPlot.R")
@@ -42,18 +43,23 @@ Last `r nrec` runs
 -----
 ```{r fig.width=11, fig.height=10, echo=FALSE, fig.align='center', cache=FALSE}
 par(mfrow=c(nrec, 1))
+ordered = stats[order(stats$startTime),]
+n = nrow(stats)
 for(i in 1:nrec){
-  id = stats$activityId[i]
-  plotSpeedElevation(gps[gps$activityId == id,], time=F, pace=F, legend=F, date=stats$startTime[i])
+  id = ordered$activityId[n-i]
+  plotSpeedElevation(gps[gps$activityId == id,], time=F, pace=F, legend=F, date=ordered$startTime[n-i])
 }
 ```
 
-Map of last run
+Map of last (and all) runs
 --------------------------------------------------------
 -----
-```{r echo=FALSE, comment="", results='asis', fig.width=5, fig.height=5, warning=FALSE}
-id = stats$activityId[2]
-plotMap(gps[gps$activityId == id,], zoomFac=14, src="stamen", type="toner", col="red")
+```{r echo=FALSE, comment="", results='asis', fig.width=11, fig.height=5, warning=FALSE}
+id = ordered$activityId[n]
+par(mfrow=c(1,2))
+p1 = plotMap(gps[gps$activityId == id,], zoomFac=14, src="stamen", type="toner", col="red")
+p2 = plotMap(gps, zoomFac=13, src="stamen", type="toner", col="red")
+grid.arrange(p1, p2, ncol=2)
 ```
 
 Graphical summary of last 31 days

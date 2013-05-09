@@ -67,6 +67,7 @@ plotMap = function(gps, zoomFac=14, src="google", type="terrain", col="red"){
     geom_point(aes(x = longitude, y = latitude), data = gps, colour = col, size = 1, pch = 20) 
 }
 
+
 # ------------------------------------------------------------------------------
 # Plots track as 3d trajectory (long, lat, alt)
 # ------------------------------------------------------------------------------
@@ -87,7 +88,8 @@ plotDistanceBars = function(stats,...){
 
 plotDistanceBarsCal = function(stats){
   max = roundEvenUp(max(stats$totalDistance))
-  days = seq(from=stats$startTime[length(stats$startTime)], to=stats$startTime[1], by="day")
+  #days = seq(from=stats$startTime[length(stats$startTime)], to=stats$startTime[1], by="day")
+  days = seq(from=min(stats$startTime), to=max(stats$startTime), by="day")
   atLab = days[seq(1, length(days), length=length(days)/4)]
   atSub = days[seq(1, length(days), length=length(days)/2)]
   plot(stats$startTime, stats$totalDistance, type="h", bty="n", pch=19, 
